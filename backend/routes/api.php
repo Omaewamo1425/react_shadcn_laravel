@@ -1,16 +1,14 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\AuthenticationController;
 
-Route::group(['namespace' => 'App\Http\Controllers\API'], function () {
-    // --------------- Register and Login ----------------//
-    Route::post('register', 'AuthenticationController@register')->name('register');
-    Route::post('login', 'AuthenticationController@login')->name('login');
-    
-    // ------------------ Get Data ----------------------//
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('get-user', 'AuthenticationController@userInfo')->name('get-user');
-        Route::post('logout', 'AuthenticationController@logOut')->name('logout');
-    });
+// ---------- Public Routes ----------
+Route::post('/register', [AuthenticationController::class, 'register'])->name('register');
+Route::post('/login', [AuthenticationController::class, 'login'])->name('login');
+
+// ---------- Protected Routes ----------
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/get-user', [AuthenticationController::class, 'userInfo'])->name('get-user');
+    Route::post('/logout', [AuthenticationController::class, 'logOut'])->name('logout');
 });

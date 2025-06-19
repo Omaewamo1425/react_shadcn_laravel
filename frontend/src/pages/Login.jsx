@@ -24,15 +24,23 @@ export default function Login() {
         password,
       });
 
-      dispatch(setToken(res.data.token));
-      dispatch(setUser(res.data.user));
+      const { token, user } = res.data;
+
+      // Save token to localStorage
+      localStorage.setItem("token", token);
+
+      // Save to Redux
+      dispatch(setToken(token));
+      dispatch(setUser(user));
+
       navigate("/dashboard");
     } catch (err) {
-      alert(err.response.data.message);
+      alert(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">

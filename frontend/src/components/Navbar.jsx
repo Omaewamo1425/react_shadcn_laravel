@@ -44,7 +44,6 @@ export default function Navbar() {
         {loading ? (
           <>
             <Loader2 className="animate-spin mr-2 h-4 w-4" />
-            Logging out...
           </>
         ) : (
           "Logout"

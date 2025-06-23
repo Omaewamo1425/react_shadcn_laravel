@@ -1,6 +1,6 @@
 import Layout from "../../components/Layout";
 
-export default function Users() {
+export default function Permission() {
   return (
     <Layout>
       

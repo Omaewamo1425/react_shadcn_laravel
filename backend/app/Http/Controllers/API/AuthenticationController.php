@@ -84,6 +84,7 @@ class AuthenticationController extends Controller
                 'user'       => $user,
                 'token'       => $token,
                 'token_type'  => 'Bearer',
+                'permissions' => $user->getPermissionNames(),
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -106,27 +107,33 @@ class AuthenticationController extends Controller
     /**
      * Get list of users (paginated) — protected route.
      */
-    public function userInfo()
+    // public function userInfo()
+    // {
+    //     try {
+    //         $users = User::latest()->paginate(10);
+
+    //         return response()->json([
+    //             'response_code'  => 200,
+    //             'status'         => 'success',
+    //             'message'        => 'Fetched user list successfully',
+    //             'data_user_list' => $users,
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('User List Error: ' . $e->getMessage());
+
+    //         return response()->json([
+    //             'response_code' => 500,
+    //             'status'        => 'error',
+    //             'message'       => 'Failed to fetch user list',
+    //         ], 500);
+    //     }
+    // }
+
+    public function userInfo(Request $request)
     {
-        try {
-            $users = User::latest()->paginate(10);
-
-            return response()->json([
-                'response_code'  => 200,
-                'status'         => 'success',
-                'message'        => 'Fetched user list successfully',
-                'data_user_list' => $users,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('User List Error: ' . $e->getMessage());
-
-            return response()->json([
-                'response_code' => 500,
-                'status'        => 'error',
-                'message'       => 'Failed to fetch user list',
-            ], 500);
-        }
+         return $request->user()->load('permissions');
     }
+
 
     /**
      * Logout user and revoke tokens — protected route.

@@ -24,14 +24,14 @@ export default function Login() {
         password,
       });
 
-      const { token, user } = res.data;
+      const { token, user, permissions } = res.data;
 
       // Save token to localStorage
       localStorage.setItem("token", token);
 
       // Save to Redux
       dispatch(setToken(token));
-      dispatch(setUser(user));
+      dispatch(setUser({ user, permissions })); 
 
       navigate("/dashboard");
     } catch (err) {
@@ -61,7 +61,6 @@ export default function Login() {
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Logging in...
             </>
           ) : (
             "Login"

@@ -3,6 +3,7 @@ const tokenFromStorage = localStorage.getItem("token");
 const initialState = {
   token: tokenFromStorage || null,
   user: null,
+  permissions: [],
 };
 
 export default function authReducer(state = initialState, action) {
@@ -11,10 +12,15 @@ export default function authReducer(state = initialState, action) {
       return { ...state, token: action.payload };
 
     case "auth/setUser":
-      return { ...state, user: action.payload };
+        return { 
+          ...state, 
+          user: action.payload,
+          permissions: action.payload.permissions || [],
+      };
+
 
     case "auth/clear":
-      return { token: null, user: null };
+      return { token: null, user: null, permissions: [] };
 
     default:
       return state;
@@ -26,10 +32,16 @@ export const setToken = (token) => {
   return { type: "auth/setToken", payload: token };
 };
 
+// export const setUser = (user) => ({
+//   type: "auth/setUser",
+//   payload: user,
+// });
+
 export const setUser = (user) => ({
   type: "auth/setUser",
   payload: user,
 });
+
 
 export const clearAuth = () => {
   localStorage.removeItem("token"); 

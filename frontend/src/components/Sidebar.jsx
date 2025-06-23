@@ -17,6 +17,12 @@ export default function Sidebar() {
         >
           Users
         </Link>
+        <Link
+          to="/permission"
+          className="block py-2 px-4 rounded hover:bg-gray-100"
+        >
+          Permission
+        </Link>
         {/* Add more menu items here if needed */}
       </nav>
     </div>

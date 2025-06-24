@@ -1,8 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\role\RoleController;
 use App\Http\Controllers\API\AuthenticationController;
 use App\Http\Controllers\user_management\UserController;
+use App\Http\Controllers\permission\PermissionController;
 
 // ---------- Public Routes ----------
 Route::post('/register', [AuthenticationController::class, 'register'])->name('register');
@@ -15,9 +17,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user_info', [AuthenticationController::class, 'userInfo'])->name('user');
 
 
-     // Permissions-based user CRUD
+    Route::get('/roles', function () {
+        return \Spatie\Permission\Models\Role::select('id', 'name')->get();
+    });
     Route::get('users', [UserController::class, 'index']);
     Route::post('users', [UserController::class, 'store']);
     Route::put('users/{user}', [UserController::class, 'update']);
     Route::delete('users/{user}', [UserController::class, 'destroy']);
+
+
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store']);
+    Route::put('/roles/{role}', [RoleController::class, 'update']);
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
+    Route::get('/permissions', [PermissionController::class, 'index']);
 });

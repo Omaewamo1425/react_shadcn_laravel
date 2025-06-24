@@ -15,18 +15,19 @@ class UserController extends Controller
     public function index()
     {
         // $this->authorize('view users');
-        return User::with('permissions')->get();
+        return User::with('roles')->get();
     }
 
     public function store(Request $request)
     {
-        $this->authorize('create users');
+        $this->authorize('create-users');
 
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
+            'role' => 'required|string|exists:roles,name',
 
         ], [
             'first_name.required' => 'The first name is required.',
@@ -36,9 +37,9 @@ class UserController extends Controller
             'email.unique' => 'This email is already taken.',
             'password.required' => 'A password is required.',
             'password.min' => 'The password must be at least 8 characters.',
-           
+            'role.required' => 'The role is required.',
+            'role.exists'   => 'The selected role is exist.',
         ]);
-
 
         $user = User::create([
             'first_name' => $validated['first_name'],
@@ -47,27 +48,26 @@ class UserController extends Controller
             'password' => bcrypt($validated['password']),
         ]);
 
-        // if (!empty($validated['permissions'])) {
-        //     $user->syncPermissions($validated['permissions']);
-        // }
+        $user->syncRoles([$validated['role']]);
 
         return response()->json([
             'status' => 'success',
             'message' => "user added successfully",
-            'user' => $user
+            // 'user' => $user
         ], 200);
     }
 
 
     public function update(Request $request, User $user)
     {
-        $this->authorize('edit users');
+        $this->authorize('edit-users');
 
          $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8',
+            'role' => 'required|string|exists:roles,name',
 
         ], [
             'first_name.required' => 'The first ame is required.',
@@ -77,6 +77,8 @@ class UserController extends Controller
             'email.unique' => 'This email is already taken.',
             'password.required' => 'A password is required.',
             'password.min' => 'The password must be at least 8 characters.',
+            'role.required' => 'The role is required.',
+            'role.exists'   => 'The selected role is exist.',
            
         ]);
 
@@ -92,6 +94,8 @@ class UserController extends Controller
 
         $user->update($updateData);
 
+        $user->syncRoles([$validated['role']]);
+
         // if (isset($validated['permissions'])) {
         //     $user->syncPermissions($validated['permissions']);
         // }
@@ -99,14 +103,14 @@ class UserController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => "user updated successfully",
-            'user' => $user
+            'user'    => $user->load('roles'),
         ], 200);
     }
 
 
     public function destroy(User $user)
     {
-        $this->authorize('delete users');
+        $this->authorize('delete-users');
         $user->delete();
         return response()->json(['message' => 'User deleted']);
     }

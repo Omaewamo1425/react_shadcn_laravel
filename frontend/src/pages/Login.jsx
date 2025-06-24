@@ -35,7 +35,7 @@ export default function Login() {
 
       navigate("/dashboard");
     } catch (err) {
-      alert(err.response?.data?.message || "Login failed");
+      console.log(err);
     } finally {
       setLoading(false);
     }

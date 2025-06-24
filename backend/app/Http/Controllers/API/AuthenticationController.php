@@ -85,6 +85,7 @@ class AuthenticationController extends Controller
                 'token'       => $token,
                 'token_type'  => 'Bearer',
                 'permissions' => $user->getPermissionNames(),
+                'roles' => $user->getRoleNames(),
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -131,7 +132,11 @@ class AuthenticationController extends Controller
 
     public function userInfo(Request $request)
     {
-         return $request->user()->load('permissions');
+        return $request->user()
+            ->load([
+                'roles:id,name', // only load id and name from roles
+                'roles.permissions:id,name', // only load id and name from permissions
+            ]);
     }
 
 

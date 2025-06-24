@@ -24,6 +24,18 @@ export default function UserList() {
   const [form, setForm] = useState({});
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [roles, setRoles] = useState([]);
+
+const fetchRoles = async () => {
+  try {
+    const res = await axios.get("http://localhost:8000/api/roles", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setRoles(res.data);
+  } catch {
+    showToast("Failed to load roles", "error");
+  }
+};
 const fetchUsers = async () => {
   try {
     const res = await axios.get("http://localhost:8000/api/users", {
@@ -41,9 +53,12 @@ const openCreate = () => {
 };
 
 const openEdit = (u) => {
-  console.log(u);
+  setForm({ 
+      ...u, 
+      password: "" ,
+      role: u.roles?.[0]?.name || "",
+    });
   
-  setForm({ ...u, password: "" });
   setModal(true);
 };
 
@@ -92,13 +107,14 @@ const deleteUser = async (id) => {
 
 useEffect(() => {
   fetchUsers();
+  fetchRoles();
 }, []);
 
   return (
     <Layout>
       <div className="mb-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold">User Management</h1>
-        {hasPermission(permissions, "create users") && (
+        {hasPermission(permissions, "create-users") && (
           <Button onClick={openCreate}>Create User</Button>
         )}
       </div>
@@ -127,12 +143,12 @@ useEffect(() => {
               </TableCell>
               <TableCell>{u.email}</TableCell>
               <TableCell className="space-x-2">
-                {hasPermission(permissions, "edit users") && (
+                {hasPermission(permissions, "edit-users") && (
                   <Button variant="outline" onClick={() => openEdit(u)}>
                     Edit
                   </Button>
                 )}
-                {hasPermission(permissions, "delete users") && (
+                {hasPermission(permissions, "delete-users") && (
                   <Button
                     variant="destructive"
                     onClick={() => deleteUser(u.id)}
@@ -154,6 +170,7 @@ useEffect(() => {
         setForm={setForm}
         onSubmit={saveUser}
         saving={saving}
+        roles={roles} 
       />
     </Layout>
   );

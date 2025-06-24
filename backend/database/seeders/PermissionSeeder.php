@@ -6,32 +6,31 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-
+use Spatie\Permission\Models\Role;
 class PermissionSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
-       public function run(): void
+    public function run()
     {
-        $user = User::find(1); // You can change to User::first() if needed
-
-        if (!$user) {
-            $this->command->error("User with ID 1 not found.");
-            return;
-        }
-
-        $permissions = ['create users', 'edit users', 'delete users'];
+        $permissions = [
+            'create-users',
+            'edit-users',
+            'delete-users',
+        ];
 
         foreach ($permissions as $perm) {
-            // Create the permission if it doesn't exist
-            $permission = Permission::firstOrCreate(['name' => $perm]);
-
-            // Give the permission to the user
-            $user->givePermissionTo($permission);
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
         }
 
-        $this->command->info("Permissions assigned to user: {$user->email}");
+        // Create roles
+        $admin_role = Role::firstOrCreate(['name' => 'super admin', 'guard_name' => 'web']);
+
+        $admin_role->syncPermissions($permissions);
+
+        $super_admin_user = User::find(1);
+        $super_admin_user->assignRole('super admin');
     }
 
 }

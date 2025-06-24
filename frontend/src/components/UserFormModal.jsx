@@ -3,7 +3,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Modal from "./custom_modal/Modal"; 
 import { Loader2 } from "lucide-react";
-export default function UserFormModal({ open, onClose, form, setForm, onSubmit, saving  }) {
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+export default function UserFormModal({ open, onClose, form, setForm, onSubmit, saving, roles = []   }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -25,6 +34,24 @@ export default function UserFormModal({ open, onClose, form, setForm, onSubmit, 
             onChange={handleChange}
             value={form.last_name || ""}
           />
+          <Select
+            value={form.role || ""}
+            onValueChange={(value) => setForm((prev) => ({ ...prev, role: value }))}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Roles</SelectLabel>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.name}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <Input
             name="email"
             placeholder="Email"

@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import User from "./pages/user_management/UserList";
 import Permission from "./pages/permission/Permission";
+import Role from "./pages/role/RoleList";
 import { ToastContainer } from "react-toastify";
 
 import { useSelector, useDispatch } from "react-redux";
@@ -25,6 +26,8 @@ export default function App() {
             },
           });
           dispatch(setUser(res.data)); 
+          console.log(res.data.roles[0].permissions);
+          
         } catch (error) {
           console.error("Failed to fetch user info", error);
           dispatch(clearAuth());
@@ -50,6 +53,10 @@ export default function App() {
         <Route
           path="/permission"
           element={token ? <Permission /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/role"
+          element={token ? <Role /> : <Navigate to="/login" />}
         />
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>

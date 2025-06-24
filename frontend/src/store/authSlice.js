@@ -6,17 +6,23 @@ const initialState = {
   permissions: [],
 };
 
+
 export default function authReducer(state = initialState, action) {
   switch (action.type) {
     case "auth/setToken":
       return { ...state, token: action.payload };
 
-    case "auth/setUser":
-        return { 
-          ...state, 
-          user: action.payload,
-          permissions: action.payload.permissions || [],
+    case "auth/setUser": {
+      const { roles = [] } = action.payload;
+      const permissions = roles.length > 0 ? roles[0].permissions || [] : [];
+
+      return {
+        ...state,
+        user: action.payload,
+        permissions,
       };
+    }
+
 
 
     case "auth/clear":

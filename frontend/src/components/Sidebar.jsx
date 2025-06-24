@@ -23,6 +23,12 @@ export default function Sidebar() {
         >
           Permission
         </Link>
+        <Link
+          to="/role"
+          className="block py-2 px-4 rounded hover:bg-gray-100"
+        >
+          Role
+        </Link>
         {/* Add more menu items here if needed */}
       </nav>
     </div>

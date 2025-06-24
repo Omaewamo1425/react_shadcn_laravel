@@ -23,80 +23,76 @@ export default function UserList() {
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({});
   const [modal, setModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+const fetchUsers = async () => {
+  try {
+    const res = await axios.get("http://localhost:8000/api/users", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setUsers(res.data);
+  } catch (e) {
+    showToast("Failed to load users", "error");
+  }
+};
 
+const openCreate = () => {
+  setForm({ first_name: "", last_name: "", email: "", password: "" });
+  setModal(true);
+};
+
+const openEdit = (u) => {
+  console.log(u);
   
-  
-  const fetchUsers = async () => {
-    try {
-      const res = await axios.get("http://localhost:8000/api/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUsers(res.data);
-    } catch (e) {
-      showToast("Failed to load users", "error");
-    }
-  };
+  setForm({ ...u, password: "" });
+  setModal(true);
+};
 
-  const openCreate = () => {
-    setForm({ first_name: "", last_name: "", email: "", password: "" });
-    setModal(true);
-  };
+const saveUser = async () => {
+  const label = form.id ? "Update" : "Create";
 
-  const openEdit = (u) => {
-    setForm({ ...u, password: "" });
-    setModal(true);
-  };
+  const confirmed = await confirmAction(`are you sure to ${label.toLowerCase()} this user?`, async () => {
+    setSaving(true);
+    const url = form.id
+      ? `http://localhost:8000/api/users/${form.id}`
+      : `http://localhost:8000/api/users`;
 
-  const saveUser = async () => {
-    try {
-      if (form.id) {
-        await axios.put(`http://localhost:8000/api/users/${form.id}`, form, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        showToast("User updated");
-      } else {
-        await axios.post(`http://localhost:8000/api/users`, form, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        showToast("User created");
-      }
+    const method = form.id ? axios.put : axios.post;
 
-      setModal(false);
-      fetchUsers();
-     } catch (error) {
-      if (error.response?.data?.errors) {
-        const errors = error.response.data.errors;
-        // Loop through each error field and show all messages
-        Object.values(errors).forEach((messages) => {
-          messages.forEach((msg) => showToast(msg, "error"));
-        });
-      } else {
-        const message = error.response?.data?.message || "Error saving user";
-        showToast(message, "error");
-      }
+    const response = await method(url, form, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      console.error("Save user failed:", error);
-    }
+    console.log("API response:", response.data);
 
-  };
-
-  const deleteUser = async (id) => {
-    if (await confirmAction("Delete this user?")) {
-      try {
-        await axios.delete(`http://localhost:8000/api/users/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        showToast("User deleted");
-        fetchUsers();
-      } catch {
-        showToast("Failed to delete user", "error");
-      }
-    }
-  };
-
-  useEffect(() => {
+    showToast(response.data.message);
     fetchUsers();
-  }, []);
+    setModal(false);
+  });
+
+  if (!confirmed) {
+    setModal(true); 
+  }
+
+  setSaving(false);
+};
+
+
+
+const deleteUser = async (id) => {
+  await confirmAction(`are you sure to delete this user?`, async () => {
+
+    const response = await axios.delete(`http://localhost:8000/api/users/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    showToast(response.data.message);
+    fetchUsers();
+  });
+};
+
+useEffect(() => {
+  fetchUsers();
+}, []);
 
   return (
     <Layout>
@@ -157,6 +153,7 @@ export default function UserList() {
         form={form}
         setForm={setForm}
         onSubmit={saveUser}
+        saving={saving}
       />
     </Layout>
   );

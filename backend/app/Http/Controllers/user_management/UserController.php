@@ -23,35 +23,39 @@ class UserController extends Controller
         $this->authorize('create users');
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'permissions' => 'nullable|array',
-            'permissions.*' => 'string|exists:permissions,name',
+            'password' => 'required|string|min:8',
+
         ], [
-            'name.required' => 'The user name is required.',
+            'first_name.required' => 'The first name is required.',
+            'last_name.required' => 'The last name is required.',
             'email.required' => 'The email address is required.',
             'email.email' => 'Please enter a valid email address.',
             'email.unique' => 'This email is already taken.',
             'password.required' => 'A password is required.',
             'password.min' => 'The password must be at least 8 characters.',
-            'password.confirmed' => 'Password confirmation does not match.',
-            'permissions.array' => 'Permissions must be an array.',
-            'permissions.*.exists' => 'One or more selected permissions are invalid.',
+           
         ]);
 
 
         $user = User::create([
-            'name' => $validated['name'],
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
             'email' => $validated['email'],
             'password' => bcrypt($validated['password']),
         ]);
 
-        if (!empty($validated['permissions'])) {
-            $user->syncPermissions($validated['permissions']);
-        }
+        // if (!empty($validated['permissions'])) {
+        //     $user->syncPermissions($validated['permissions']);
+        // }
 
-        return response()->json($user, 201);
+        return response()->json([
+            'status' => 'success',
+            'message' => "user added successfully",
+            'user' => $user
+        ], 200);
     }
 
 
@@ -59,16 +63,26 @@ class UserController extends Controller
     {
         $this->authorize('edit users');
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
-            'permissions' => 'nullable|array',
-            'permissions.*' => 'string|exists:permissions,name',
+         $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'nullable|string|min:8',
+
+        ], [
+            'first_name.required' => 'The first ame is required.',
+            'last_name.required' => 'The first ame is required.',
+            'email.required' => 'The email address is required.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.unique' => 'This email is already taken.',
+            'password.required' => 'A password is required.',
+            'password.min' => 'The password must be at least 8 characters.',
+           
         ]);
 
         $updateData = [
-            'name' => $validated['name'],
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
             'email' => $validated['email'],
         ];
 
@@ -78,11 +92,15 @@ class UserController extends Controller
 
         $user->update($updateData);
 
-        if (isset($validated['permissions'])) {
-            $user->syncPermissions($validated['permissions']);
-        }
+        // if (isset($validated['permissions'])) {
+        //     $user->syncPermissions($validated['permissions']);
+        // }
 
-        return response()->json($user);
+        return response()->json([
+            'status' => 'success',
+            'message' => "user updated successfully",
+            'user' => $user
+        ], 200);
     }
 
 

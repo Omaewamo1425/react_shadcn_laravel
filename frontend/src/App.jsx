@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import User from "./pages/user_management/UserList";
-import Permission from "./pages/permission/Permission";
+import Permission from "./pages/permission/PermissionList";
 import Role from "./pages/role/RoleList";
 import { ToastContainer } from "react-toastify";
 
@@ -10,12 +10,13 @@ import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
 import axios from "axios";
 import { setUser, clearAuth } from "./store/authSlice";
-
+import { hasPermission } from "@/utils/permissions";
+import Forbidden from "@/pages/Forbidden"; 
 export default function App() {
   const token = useSelector((state) => state.auth.token);
   const dispatch = useDispatch();
 
-  // 👇 Fetch user info if token exists
+  const permissions = useSelector((state) => state.auth.permissions);
   useEffect(() => {
     const fetchUserInfo = async () => {
       if (token) {
@@ -48,7 +49,17 @@ export default function App() {
         />
         <Route
           path="/users"
-          element={token ? <User /> : <Navigate to="/login" />}
+          element={
+            token ? (
+              hasPermission(permissions, 'view-users') ? (
+                <User />
+              ) : (
+                <Forbidden />
+              )
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
         <Route
           path="/permission"

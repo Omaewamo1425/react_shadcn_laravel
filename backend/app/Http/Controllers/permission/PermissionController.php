@@ -9,30 +9,46 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
-    public function index() 
+    public function index()
     {
         return Permission::all();
     }
-    // public function createPermission(Request $request)
-    // {
-    //     $request->validate(['name' => 'required|string|unique:permissions,name']);
 
-    //     $permission = Permission::create(['name' => $request->name]);
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|unique:permissions,name',
+        ]);
 
-    //     return response()->json(['message' => 'Permission created', 'permission' => $permission]);
-    // }
+        $permission = Permission::create([
+            'name' => $validated['name'],
+            'guard_name' => 'web',
+        ]);
 
+        return response()->json($permission, 201);
+    }
 
-    // public function assignPermission(Request $request)
-    // {
-    //     $request->validate([
-    //         'user_id' => 'required|exists:users,id',
-    //         'permission' => 'required|exists:permissions,name'
-    //     ]);
+    public function show(Permission $permission)
+    {
+        return $permission;
+    }
 
-    //     $user = User::findOrFail($request->user_id);
-    //     $user->givePermissionTo($request->permission);
+    public function update(Request $request, Permission $permission)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|unique:permissions,name,' . $permission->id,
+        ]);
 
-    //     return response()->json(['message' => 'Permission assigned']);
-    // }
+        $permission->update([
+            'name' => $validated['name'],
+        ]);
+
+        return response()->json($permission);
+    }
+
+    public function destroy(Permission $permission)
+    {
+        $permission->delete();
+        return response()->json(['message' => 'Permission deleted']);
+    }
 }

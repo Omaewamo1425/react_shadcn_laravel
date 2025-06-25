@@ -12,11 +12,13 @@ class UserController extends Controller
 
     use AuthorizesRequests;
 
-    public function index()
+    public function index(Request $request)
     {
-        // $this->authorize('view users');
-        return User::with('roles')->get();
+        $limit = $request->query('limit', 25);
+        $users = User::with('roles')->paginate($limit);
+        return response()->json($users);
     }
+
 
     public function store(Request $request)
     {

@@ -14,10 +14,22 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        $limit = $request->query('limit', 25);
-        $users = User::with('roles')->paginate($limit);
-        return response()->json($users);
+        $query = User::with('roles');
+
+        if ($search = $request->query('search')) {
+            $query->where('first_name', 'like', "%$search%")
+                ->orWhere('last_name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%");
+        }
+
+        if ($sortBy = $request->query('sort_by')) {
+            $order = $request->query('order', 'asc');
+            $query->orderBy($sortBy, $order);
+        }
+
+        return response()->json($query->paginate($request->query('limit', 25)));
     }
+
 
 
     public function store(Request $request)

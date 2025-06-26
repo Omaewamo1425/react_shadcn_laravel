@@ -1,27 +1,22 @@
-import { useEffect, useState,useCallback } from "react";
+// UserList.jsx — with use-debounce integration
+import { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import UserFormModal from "../../components/UserFormModal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { hasPermission } from "../../utils/permissions";
 import { showToast } from "../../utils/toast";
 import { confirmAction } from "../../utils/confirm";
-
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  flexRender,
+} from "@tanstack/react-table";
+import Skeleton from "@/components/ui/skeleton";
+import { useDebounce } from "use-debounce";
 
 export default function UserList() {
   const token = useSelector((state) => state.auth.token);
@@ -31,8 +26,16 @@ export default function UserList() {
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [roles, setRoles] = useState([]);
-  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1 });
-  const [perPage, setPerPage] = useState(25);
+  const [loading, setLoading] = useState(false);
+
+  // Server-side table state
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch] = useDebounce(search, 500);
+  const [sortBy, setSortBy] = useState();
+  const [sortDir, setSortDir] = useState();
 
   const fetchRoles = async () => {
     try {
@@ -45,21 +48,27 @@ export default function UserList() {
     }
   };
 
-  const fetchUsers = useCallback(async (page = 1, limit = perPage) => {
+  const fetchUsers = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:8000/api/users?page=${page}&limit=${limit}`, {
+      setLoading(true);
+      const res = await axios.get(`http://localhost:8000/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
+        params: {
+          page: pageIndex + 1,
+          limit: pageSize,
+          search: debouncedSearch,
+          sort_by: sortBy,
+          order: sortDir,
+        },
       });
-
       setUsers(res.data.data);
-      setPagination({
-        current_page: res.data.current_page,
-        last_page: res.data.last_page,
-      });
+      setTotalPages(res.data.last_page);
     } catch {
       showToast("Failed to load users", "error");
-    } 
-  },[perPage,token]);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, pageIndex, pageSize, debouncedSearch, sortBy, sortDir]);
 
   const openCreate = () => {
     fetchRoles();
@@ -82,13 +91,12 @@ export default function UserList() {
         : `http://localhost:8000/api/users`;
 
       const method = form.id ? axios.put : axios.post;
-
       const response = await method(url, form, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       showToast(response.data.message);
-      fetchUsers(pagination.current_page);
+      fetchUsers();
       setModal(false);
     });
 
@@ -101,103 +109,169 @@ export default function UserList() {
       await axios.delete(`http://localhost:8000/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       showToast("User deleted successfully");
-      fetchUsers(pagination.current_page);
+      fetchUsers();
     });
   };
 
   useEffect(() => {
-    fetchUsers(1, perPage);
-  }, [fetchUsers,perPage]);
+    fetchUsers();
+  }, [fetchUsers]);
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [debouncedSearch]);
+
+  const columns = useMemo(() => [
+    {
+      id: "select",
+      header: () => <div className="text-center">Select</div>,
+      cell: ({ row }) => (
+        <div className="text-center">
+          <Checkbox checked={row.getIsSelected()} onCheckedChange={() => row.toggleSelected()} />
+        </div>
+      ),
+    },
+    {
+      accessorKey: "first_name",
+      header: "First Name",
+      cell: (info) => <span className="capitalize">{info.getValue()}</span>,
+    },
+    {
+      accessorKey: "last_name",
+      header: "Last Name",
+      cell: (info) => <span className="capitalize">{info.getValue()}</span>,
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <div className="text-center space-x-2">
+          {hasPermission(permissions, "edit-users") && (
+            <Button variant="outline" size="sm" onClick={() => openEdit(row.original)}>
+              Edit
+            </Button>
+          )}
+          {hasPermission(permissions, "delete-users") && (
+            <Button variant="destructive" size="sm" onClick={() => deleteUser(row.original.id)}>
+              Delete
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ], [permissions]);
+
+  const table = useReactTable({
+    data: users,
+    columns,
+    pageCount: totalPages,
+    state: {
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
+    },
+    onPaginationChange: (updater) => {
+      const next = typeof updater === "function" ? updater({ pageIndex, pageSize }) : updater;
+      setPageIndex(next.pageIndex);
+      setPageSize(next.pageSize);
+    },
+    manualPagination: true,
+    manualSorting: true,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
 
   return (
-    <>
-    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         {hasPermission(permissions, "create-users") && (
-          <Button onClick={openCreate} className="w-full md:w-auto">
-            + Create User
-          </Button>
+          <Button onClick={openCreate}>+ Create User</Button>
         )}
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search users..."
+          className="w-full md:w-64"
+        />
       </div>
 
-      {/* Table */}
-      <div className="rounded-lg border shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>First Name</TableHead>
-              <TableHead>Last Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((u) => (
-              <TableRow key={u.id}>
-                <TableCell className="capitalize">{u.first_name}</TableCell>
-                <TableCell className="capitalize">{u.last_name}</TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell className="text-right space-x-2">
-                  {hasPermission(permissions, "edit-users") && (
-                    <Button variant="outline" size="sm" onClick={() => openEdit(u)}>
-                      Edit
-                    </Button>
-                  )}
-                  {hasPermission(permissions, "delete-users") && (
-                    <Button variant="destructive" size="sm" onClick={() => deleteUser(u.id)}>
-                      Delete
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
+      <div className="overflow-x-auto border rounded-md shadow-sm">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    onClick={() => {
+                      const sort = header.column.getIsSorted();
+                      if (!sort) {
+                        setSortBy(header.column.id);
+                        setSortDir("asc");
+                      } else if (sort === "asc") {
+                        setSortBy(header.column.id);
+                        setSortDir("desc");
+                      } else {
+                        setSortBy(undefined);
+                        setSortDir(undefined);
+                      }
+                    }}
+                    className="text-center p-3 cursor-pointer"
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                    {header.column.getIsSorted() === 'asc' ? ' 🔼' : header.column.getIsSorted() === 'desc' ? ' 🔽' : ''}
+                  </th>
+                ))}
+              </tr>
             ))}
-          </TableBody>
-        </Table>
+          </thead>
+          <tbody>
+            {loading ? (
+              [...Array(5)].map((_, idx) => (
+                <tr key={idx}><td colSpan={columns.length}><Skeleton className="h-6 w-full" /></td></tr>
+              ))
+            ) : table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="border-t hover:bg-gray-50 dark:hover:bg-gray-800">
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="text-center p-3">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={columns.length} className="text-center p-4">
+                  No users found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* Pagination + Per Page */}
-      <div className="mt-6 flex flex-col md:flex-row justify-between items-center gap-4 border-t pt-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-700">Show:</span>
-          <Select value={perPage.toString()} onValueChange={(value) => setPerPage(Number(value))}>
-            <SelectTrigger className="w-[100px]">
-              <SelectValue placeholder="Per page" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Pagination */}
+      <div className="flex justify-between items-center pt-4">
+        <div className="text-sm text-gray-600">
+          Page {pageIndex + 1} of {totalPages}
         </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={pagination.current_page === 1}
-            onClick={() => fetchUsers(pagination.current_page - 1, perPage)}
-          >
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPageIndex(Math.max(0, pageIndex - 1))} disabled={pageIndex === 0}>
             Previous
           </Button>
-          <span className="text-sm text-gray-600">
-            Page <strong>{pagination.current_page}</strong> of <strong>{pagination.last_page}</strong>
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={pagination.current_page === pagination.last_page}
-            onClick={() => fetchUsers(pagination.current_page + 1, perPage)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setPageIndex(Math.min(totalPages - 1, pageIndex + 1))} disabled={pageIndex + 1 >= totalPages}>
             Next
           </Button>
         </div>
       </div>
 
-      {/* Modal */}
       <UserFormModal
         open={modal}
         onClose={() => setModal(false)}
@@ -207,6 +281,6 @@ export default function UserList() {
         saving={saving}
         roles={roles}
       />
-    </>
+    </div>
   );
 }

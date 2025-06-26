@@ -79,8 +79,8 @@ export default function PermissionList() {
   }, [fetchPermissions]);
 
   return (
-    <Layout>
-      <div className="mb-4 flex justify-between items-center">
+    <>
+    <div className="mb-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold">Permissions</h1>
         <Button onClick={openCreate}>Create Permission</Button>
       </div>
@@ -115,6 +115,6 @@ export default function PermissionList() {
         onSubmit={savePermission}
         saving={saving}
       />
-    </Layout>
+    </>
   );
 }

@@ -4,6 +4,8 @@ import Dashboard from "./pages/Dashboard";
 import User from "./pages/user_management/UserList";
 import Permission from "./pages/permission/PermissionList";
 import Role from "./pages/role/RoleList";
+import Forbidden from "./pages/Forbidden";
+import Layout from "./components/Layout";
 import { ToastContainer } from "react-toastify";
 
 import { useSelector, useDispatch } from "react-redux";
@@ -11,12 +13,12 @@ import { useEffect } from "react";
 import axios from "axios";
 import { setUser, clearAuth } from "./store/authSlice";
 import { hasPermission } from "@/utils/permissions";
-import Forbidden from "@/pages/Forbidden"; 
+
 export default function App() {
   const token = useSelector((state) => state.auth.token);
+  const permissions = useSelector((state) => state.auth.permissions);
   const dispatch = useDispatch();
 
-  const permissions = useSelector((state) => state.auth.permissions);
   useEffect(() => {
     const fetchUserInfo = async () => {
       if (token) {
@@ -26,9 +28,7 @@ export default function App() {
               Authorization: `Bearer ${token}`,
             },
           });
-          dispatch(setUser(res.data)); 
-          console.log(res.data.roles[0].permissions);
-          
+          dispatch(setUser(res.data));
         } catch (error) {
           console.error("Failed to fetch user info", error);
           dispatch(clearAuth());
@@ -39,39 +39,61 @@ export default function App() {
     fetchUserInfo();
   }, [token]);
 
+  // Wrap all protected pages inside Layout
+  const ProtectedRoute = ({ children, permission }) => {
+    if (!token) return <Navigate to="/login" />;
+    if (permission && !hasPermission(permissions, permission)) return <Forbidden />;
+    return <Layout>{children}</Layout>;
+  };
+
   return (
     <>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={!token ? <Login /> : <Navigate to="/dashboard" />}
+        />
+
         <Route
           path="/dashboard"
-          element={token ? <Dashboard /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
         />
+
         <Route
           path="/users"
           element={
-            token ? (
-              hasPermission(permissions, 'view-users') ? (
-                <User />
-              ) : (
-                <Forbidden />
-              )
-            ) : (
-              <Navigate to="/login" />
-            )
+            <ProtectedRoute permission="view-users">
+              <User />
+            </ProtectedRoute>
           }
         />
+
         <Route
           path="/permission"
-          element={token ? <Permission /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <Permission />
+            </ProtectedRoute>
+          }
         />
+
         <Route
           path="/role"
-          element={token ? <Role /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <Role />
+            </ProtectedRoute>
+          }
         />
+
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
-      <ToastContainer />
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 }

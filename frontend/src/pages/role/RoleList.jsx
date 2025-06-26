@@ -1,4 +1,3 @@
-import Layout from "../../components/Layout";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
@@ -83,8 +82,8 @@ export default function RoleList() {
     fetchPermissions();
   }, []);
   return (
-    <Layout>
-        <div className="p-4">
+    <>
+    <div className="p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Roles & Permissions</h2>
           <Button onClick={openCreate}>Create Role</Button>
@@ -132,6 +131,6 @@ export default function RoleList() {
           saving={saving}
         />
       </div>
-    </Layout>
+    </>
   );
 }

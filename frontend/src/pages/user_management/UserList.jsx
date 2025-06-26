@@ -1,5 +1,4 @@
-import Layout from "../../components/Layout";
-import { useEffect, useState } from "react";
+import { useEffect, useState,useCallback } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import UserFormModal from "../../components/UserFormModal";
@@ -32,7 +31,6 @@ export default function UserList() {
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ current_page: 1, last_page: 1 });
   const [perPage, setPerPage] = useState(25);
 
@@ -47,8 +45,7 @@ export default function UserList() {
     }
   };
 
-  const fetchUsers = async (page = 1, limit = perPage) => {
-    setLoading(true);
+  const fetchUsers = useCallback(async (page = 1, limit = perPage) => {
     try {
       const res = await axios.get(`http://localhost:8000/api/users?page=${page}&limit=${limit}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -61,10 +58,8 @@ export default function UserList() {
       });
     } catch {
       showToast("Failed to load users", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+    } 
+  },[perPage,token]);
 
   const openCreate = () => {
     fetchRoles();
@@ -114,11 +109,11 @@ export default function UserList() {
 
   useEffect(() => {
     fetchUsers(1, perPage);
-  }, [perPage]);
+  }, [fetchUsers,perPage]);
 
   return (
-    <Layout loading={loading}>
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+    <>
+    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
         {hasPermission(permissions, "create-users") && (
           <Button onClick={openCreate} className="w-full md:w-auto">
@@ -212,6 +207,6 @@ export default function UserList() {
         saving={saving}
         roles={roles}
       />
-    </Layout>
+    </>
   );
 }

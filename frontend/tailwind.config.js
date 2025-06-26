@@ -8,5 +8,9 @@ export default {
   theme: {
     extend: {},
   },
+  colors: {
+    brand: "#e15b05",
+  },
+
   plugins: [],
 };

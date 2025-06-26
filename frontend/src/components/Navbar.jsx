@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import {
-  Sun, Moon, Bell, User, LogOut,
-} from "lucide-react";
+import { Sun, Moon, Bell, User, LogOut } from "lucide-react";
 import {
   Avatar, AvatarFallback, AvatarImage,
 } from "@/components/ui/avatar";
@@ -18,11 +16,11 @@ export default function Navbar({ onToggleSidebar, applyTheme, isDark }) {
   const dispatch = useDispatch();
   const location = useLocation();
   const user = useSelector((state) => state.auth.user);
-  const [notificationCount] = useState(3);
+  const [notificationCount] = useState(2);
 
   const handleLogout = async () => {
+    const token = localStorage.getItem("token");
     try {
-      const token = localStorage.getItem("token");
       await fetch("http://localhost:8000/api/logout", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -36,17 +34,18 @@ export default function Navbar({ onToggleSidebar, applyTheme, isDark }) {
   };
 
   return (
-    <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-700 px-6 flex items-center justify-between h-[64px]">
+    <div className="sticky top-0 z-20 backdrop-blur-md bg-white/70 dark:bg-gray-900/80 shadow-sm border-b border-gray-200 dark:border-gray-700 px-6 flex items-center justify-between h-[64px]">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
           ☰
         </Button>
-        <h1 className="text-xl font-semibold tracking-wide text-gray-800 dark:text-white capitalize">
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-white capitalize">
           {location.pathname.replace("/", "") || "Dashboard"}
         </h1>
       </div>
+
       <div className="flex items-center gap-3">
-        {/* Theme toggle */}
+        {/* Theme Toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="relative">
@@ -63,22 +62,24 @@ export default function Navbar({ onToggleSidebar, applyTheme, isDark }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Notifications */}
+        {/* Notification */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
               {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-[#e15b05] text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                   {notificationCount}
                 </span>
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>You have {notificationCount} new notifications</DropdownMenuItem>
+            <DropdownMenuItem>
+              🔔 You have {notificationCount} new messages
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -86,17 +87,17 @@ export default function Navbar({ onToggleSidebar, applyTheme, isDark }) {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <div className="flex items-center gap-2 cursor-pointer">
-              <Avatar className="ring-2 ring-[#e15b05] hover:ring-orange-500">
+              <Avatar className="ring-2 ring-[#e15b05]">
                 <AvatarImage src="https://avatars.githubusercontent.com/u/1486366" />
                 <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
-              <span className="hidden md:block text-sm font-medium text-gray-800 dark:text-white">
+              <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-white">
                 {user?.name || "User"}
               </span>
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <User className="mr-2 h-4 w-4" /> Profile

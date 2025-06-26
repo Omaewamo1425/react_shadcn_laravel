@@ -41,7 +41,7 @@ export default function Layout({ children }) {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
       {!loading && (
         <Sidebar
           sidebarOpen={sidebarOpen}
@@ -62,15 +62,15 @@ export default function Layout({ children }) {
           isDark={isDark}
         />
 
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50 dark:bg-gray-950">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+              exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="bg-white dark:bg-gray-900 rounded-2xl shadow-md p-6 min-h-[calc(100vh-64px-48px)]"
+              className="rounded-2xl backdrop-blur-md bg-white/70 dark:bg-gray-900/80 shadow-xl p-4 md:p-6 min-h-[calc(100vh-64px-48px)] transition-all"
             >
               {children}
             </motion.div>
@@ -80,4 +80,3 @@ export default function Layout({ children }) {
     </div>
   );
 }
- 

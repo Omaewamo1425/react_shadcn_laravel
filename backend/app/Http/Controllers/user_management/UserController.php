@@ -27,7 +27,7 @@ class UserController extends Controller
             $query->orderBy($sortBy, $order);
         }
 
-        return response()->json($query->paginate($request->query('limit', 25)));
+        return response()->json($query->paginate($request->query('limit', 10)));
     }
 
 

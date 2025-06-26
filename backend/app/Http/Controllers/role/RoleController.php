@@ -9,13 +9,31 @@ use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
-    public function index() 
+    public function index(Request $request)
     {
-        return Role::with('permissions')->get();
+        $query = Role::with('permissions');
+
+        if ($search = $request->query('search')) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        if ($sortBy = $request->query('sort_by')) {
+            $order = $request->query('order', 'asc');
+            $query->orderBy($sortBy, $order);
+        }
+
+        $limit = intval($request->query('limit', 10));
+
+        return response()->json($query->paginate($limit));
     }
+
 
     public function store(Request $request) 
     {
+        $validated = $request->validate([
+            'name' => 'required|string|unique:roles,name',
+        ]);
+
         $role = Role::create(['name' => $request->name, 'guard_name' => 'web']);
         $role->syncPermissions($request->permissions);
         return $role->load('permissions');

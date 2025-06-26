@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import DataTableServer from "@/components/tables/DataTableServer";
 import RoleFormModal from "@/components/role/RoleFormModal";
 import { showToast } from "@/utils/toast";
 import { confirmAction } from "@/utils/confirm";
@@ -14,19 +14,17 @@ export default function RoleList() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
-
-  const fetchRoles = async () => {
-    const res = await axios.get("http://localhost:8000/api/roles", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setRoles(res.data);
-  };
+  const [refresh, setRefresh] = useState(false);
 
   const fetchPermissions = async () => {
-    const res = await axios.get("http://localhost:8000/api/permissions", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setPermissions(res.data);
+    try {
+      const res = await axios.get("http://localhost:8000/api/permissions", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPermissions(res.data);
+    } catch (e) {
+      showToast("Failed to load permissions", "error");
+    }
   };
 
   const openCreate = () => {
@@ -57,7 +55,7 @@ export default function RoleList() {
       });
 
       showToast(`Role ${form.id ? "updated" : "created"} successfully`);
-      fetchRoles();
+      setRefresh((prev) => !prev);
       setModal(false);
     });
 
@@ -74,63 +72,73 @@ export default function RoleList() {
     });
 
     showToast("Role deleted successfully");
-    fetchRoles();
+    setRefresh((prev) => !prev);
   };
 
+  const columns = [
+    {
+      accessorKey: "name",
+      header: () => <div className="text-center">Role</div>,
+      cell: (info) => <div className="text-center text-xs">{info.getValue()}</div>,
+    },
+    {
+      id: "permissions",
+      header: () => <div className="text-center">Permissions</div>,
+      cell: ({ row }) => (
+        <div className="flex justify-center flex-wrap gap-1">
+          {row.original.permissions.map((p) => (
+            <span
+              key={p.id}
+              className="bg-green-100 text-green-800 text-[10px] font-medium px-2 py-0.5 rounded-full"
+            >
+              {p.name}
+            </span>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-center">Actions</div>,
+      cell: ({ row }) => (
+        <div className="flex justify-center gap-1">
+          <Button size="sm" className="h-6 px-2 text-[10px]" variant="outline" onClick={() => openEdit(row.original)}>
+            Edit
+          </Button>
+          <Button size="sm" className="h-6 px-2 text-[10px]" variant="destructive" onClick={() => deleteRole(row.original.id)}>
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   useEffect(() => {
-    fetchRoles();
     fetchPermissions();
   }, []);
+
   return (
-    <>
     <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Roles & Permissions</h2>
-          <Button onClick={openCreate}>Create Role</Button>
-        </div>
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Role</TableHead>
-              <TableHead>Permissions</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {roles.map((role) => (
-              <TableRow key={role.id}>
-                <TableCell>{role.name}</TableCell>
-                <TableCell>
-                  {role.permissions.map((p) => (
-                    <span key={p.id} className="inline-block bg-gray-200 text-sm px-2 py-1 rounded mr-1">
-                      {p.name}
-                    </span>
-                  ))}
-                </TableCell>
-                <TableCell className="space-x-2">
-                  <Button variant="outline" onClick={() => openEdit(role)}>
-                    Edit
-                  </Button>
-                  <Button variant="destructive" onClick={() => deleteRole(role.id)}>
-                    Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        <RoleFormModal
-          open={modal}
-          onClose={() => setModal(false)}
-          form={form}
-          setForm={setForm}
-          permissions={permissions}
-          onSubmit={saveRole}
-          saving={saving}
+      <div className="mb-4">
+        <h2 className="text-xl font-bold mb-2">Roles</h2>
+        <DataTableServer
+          token={token}
+          fetchUrl="http://localhost:8000/api/roles"
+          columnsDef={columns}
+          createButton={<Button onClick={openCreate}>+ Create Role</Button>}
+          refreshSignal={refresh}
         />
       </div>
-    </>
+
+      <RoleFormModal
+        open={modal}
+        onClose={() => setModal(false)}
+        form={form}
+        setForm={setForm}
+        permissions={permissions}
+        onSubmit={saveRole}
+        saving={saving}
+      />
+    </div>
   );
 }

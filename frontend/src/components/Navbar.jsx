@@ -1,115 +1,105 @@
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
-import { clearAuth } from "../store/authSlice";
-import { LogOut, Moon, Sun, Settings, User } from "lucide-react";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  Sun, Moon, Bell, User, LogOut,
+} from "lucide-react";
+import {
+  Avatar, AvatarFallback, AvatarImage,
+} from "@/components/ui/avatar";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { clearAuth } from "../store/authSlice";
 
-export default function Navbar({ onToggleSidebar }) {
+export default function Navbar({ onToggleSidebar, applyTheme, isDark }) {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored === "dark" || stored === "light") {
-      document.documentElement.classList.add(stored);
-    } else if (stored === "system") {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      document.documentElement.classList.add(prefersDark ? "dark" : "light");
-    }
-  }, []);
-
-  const toggleTheme = (mode) => {
-    localStorage.setItem("theme", mode);
-    document.documentElement.classList.remove("light", "dark");
-    if (mode === "system") {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      document.documentElement.classList.add(prefersDark ? "dark" : "light");
-    } else {
-      document.documentElement.classList.add(mode);
-    }
-  };
+  const user = useSelector((state) => state.auth.user);
+  const [notificationCount] = useState(3);
 
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:8000/api/logout", {}, {
+      await fetch("http://localhost:8000/api/logout", {
+        method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       dispatch(clearAuth());
       localStorage.removeItem("token");
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout failed", error);
+      window.location.href = "/login";
+    } catch (e) {
+      console.error("Logout failed", e);
     }
   };
 
-  const routeMap = {
-    "/dashboard": "Dashboard",
-    "/users": "Users",
-    "/permission": "Permission",
-    "/role": "Role",
-  };
-
-  const currentPath = location.pathname;
-  const currentPage = routeMap[currentPath] || "Dashboard";
-
   return (
-    <nav className="p-4 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-30 shadow-sm border-b">
+    <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-700 px-6 flex items-center justify-between h-[64px]">
       <div className="flex items-center gap-4">
-        <button
-          onClick={onToggleSidebar}
-          className="text-gray-700 dark:text-gray-300"
-        >
+        <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
           ☰
-        </button>
-        <div className="text-sm text-muted-foreground">
-          Home / <span className="capitalize">{currentPage}</span>
-        </div>
+        </Button>
+        <h1 className="text-xl font-semibold tracking-wide text-gray-800 dark:text-white capitalize">
+          {location.pathname.replace("/", "") || "Dashboard"}
+        </h1>
       </div>
-
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        {/* Theme toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
+            <Button variant="outline" size="icon" className="relative">
+              <Sun className={`h-5 w-5 ${isDark ? "hidden" : "block"}`} />
+              <Moon className={`h-5 w-5 absolute ${isDark ? "block" : "hidden"}`} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => toggleTheme("light")}>Light</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toggleTheme("dark")}>Dark</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toggleTheme("system")}>System</DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuLabel>Theme</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => applyTheme("light")}>🌞 Light</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => applyTheme("dark")}>🌙 Dark</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => applyTheme("system")}>🖥 System</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Notifications */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {notificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {notificationCount}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>You have {notificationCount} new notifications</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <Avatar className="cursor-pointer">
-              <AvatarImage src="https://avatars.githubusercontent.com/u/1486366" />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <Avatar className="ring-2 ring-[#e15b05] hover:ring-orange-500">
+                <AvatarImage src="https://avatars.githubusercontent.com/u/1486366" />
+                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+              </Avatar>
+              <span className="hidden md:block text-sm font-medium text-gray-800 dark:text-white">
+                {user?.name || "User"}
+              </span>
+            </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <User className="mr-2 h-4 w-4" /> Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" /> Settings
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout} className="text-red-600">
               <LogOut className="mr-2 h-4 w-4" /> Logout
@@ -117,6 +107,6 @@ export default function Navbar({ onToggleSidebar }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </nav>
+    </div>
   );
 }

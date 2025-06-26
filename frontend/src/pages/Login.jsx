@@ -24,27 +24,27 @@ export default function Login() {
         password,
       });
 
-      const { token, user, permissions } = res.data;
+      const { token, user } = res.data;
 
-      // Save token to localStorage
+      // Store token
       localStorage.setItem("token", token);
-
-      // Save to Redux
       dispatch(setToken(token));
-      dispatch(setUser({ user, permissions })); 
 
+      // Wait for Redux to store user and permissions
+      await dispatch(setUser(user)); // Make sure this matches your reducer's expectation
+
+      // Navigate after state is updated
       navigate("/dashboard");
     } catch (err) {
-      console.log(err);
+      console.error("Login failed", err);
     } finally {
       setLoading(false);
     }
   };
 
-
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="space-y-4 w-full max-w-sm bg-white p-6 shadow rounded">
+    <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="space-y-4 w-full max-w-sm bg-white dark:bg-gray-800 p-6 shadow rounded">
         <Input
           placeholder="Email"
           type="email"
@@ -61,6 +61,7 @@ export default function Login() {
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Logging in...
             </>
           ) : (
             "Login"

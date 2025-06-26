@@ -1,12 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import DataTableServer from "@/components/tables/DataTableServer";
+import PermissionFormModal from "@/components/permission/PermissionFormModal";
 import { showToast } from "@/utils/toast";
 import { confirmAction } from "@/utils/confirm";
-import PermissionFormModal from "@/components/permission/PermissionFormModal";
-import Layout from "@/components/Layout";
 
 export default function PermissionList() {
   const token = useSelector((state) => state.auth.token);
@@ -38,74 +37,96 @@ export default function PermissionList() {
 
   const savePermission = async () => {
     const label = form.id ? "update" : "create";
+    const confirmed = await confirmAction(
+      `Are you sure you want to ${label} this permission?`,
+      async () => {
+        setSaving(true);
+        const url = form.id
+          ? `http://localhost:8000/api/permissions/${form.id}`
+          : `http://localhost:8000/api/permissions`;
+        const method = form.id ? axios.put : axios.post;
+        await method(url, form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        showToast(`Permission ${form.id ? "updated" : "created"} successfully`);
+        fetchPermissions();
+        setModal(false);
+      }
+    );
 
-    const confirmed = await confirmAction(`Are you sure you want to ${label} this permission?`, async () => {
-      setSaving(true);
-
-      const url = form.id
-        ? `http://localhost:8000/api/permissions/${form.id}`
-        : `http://localhost:8000/api/permissions`;
-
-      const method = form.id ? axios.put : axios.post;
-
-      const response = await method(url, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      showToast(`Permission ${form.id ? "updated" : "created"} successfully`);
-      fetchPermissions();
-      setModal(false);
-    });
-
-    if (!confirmed) {
-      setModal(true);
-    }
-
+    if (!confirmed) setModal(true);
     setSaving(false);
   };
 
   const deletePermission = async (id) => {
-    const confirmed = await confirmAction("Are you sure you want to delete this permission?", async () => {
-      await axios.delete(`http://localhost:8000/api/permissions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      showToast("Permission deleted");
-      fetchPermissions();
-    });
+    await confirmAction(
+      "Are you sure you want to delete this permission?",
+      async () => {
+        await axios.delete(`http://localhost:8000/api/permissions/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        showToast("Permission deleted");
+        fetchPermissions();
+      }
+    );
   };
+
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: "id",
+        header: () => <div className="text-center">ID</div>,
+        cell: (info) => <div className="text-center text-xs">{info.getValue()}</div>,
+      },
+      {
+        accessorKey: "name",
+        header: () => <div className="text-center">Name</div>,
+        cell: (info) => <div className="text-center text-xs">{info.getValue()}</div>,
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-center">Actions</div>,
+        cell: ({ row }) => (
+          <div className="flex justify-center gap-1">
+            <Button
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              variant="outline"
+              onClick={() => openEdit(row.original)}
+            >
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              variant="destructive"
+              onClick={() => deletePermission(row.original.id)}
+            >
+              Delete
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
 
   useEffect(() => {
     fetchPermissions();
   }, [fetchPermissions]);
 
   return (
-    <>
-    <div className="mb-4 flex justify-between items-center">
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Permissions</h1>
         <Button onClick={openCreate}>Create Permission</Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {permissions.map((perm) => (
-            <TableRow key={perm.id}>
-              <TableCell>{perm.id}</TableCell>
-              <TableCell>{perm.name}</TableCell>
-              <TableCell className="space-x-2">
-                <Button variant="outline" onClick={() => openEdit(perm)}>Edit</Button>
-                <Button variant="destructive" onClick={() => deletePermission(perm.id)}>Delete</Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <DataTableServer
+        token={token}
+        fetchUrl="http://localhost:8000/api/permissions/read"
+        columnsDef={columns}
+      />
 
       <PermissionFormModal
         open={modal}
@@ -115,6 +136,6 @@ export default function PermissionList() {
         onSubmit={savePermission}
         saving={saving}
       />
-    </>
+    </div>
   );
 }

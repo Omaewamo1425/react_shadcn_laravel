@@ -123,7 +123,7 @@ export default function RoleList() {
         <h2 className="text-xl font-bold mb-2">Roles</h2>
         <DataTableServer
           token={token}
-          fetchUrl="http://localhost:8000/api/roles"
+          fetchUrl="http://localhost:8000/api/read"
           columnsDef={columns}
           createButton={<Button onClick={openCreate}>+ Create Role</Button>}
           refreshSignal={refresh}

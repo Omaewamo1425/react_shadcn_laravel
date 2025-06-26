@@ -9,7 +9,11 @@ use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
-    public function index(Request $request)
+    public function index()
+    {
+        return Role::all();
+    }
+    public function read(Request $request)
     {
         $query = Role::with('permissions');
 

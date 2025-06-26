@@ -14,6 +14,25 @@ class PermissionController extends Controller
         return Permission::all();
     }
 
+    public function read(Request $request)
+    {
+        $query = Permission::query();
+
+        if ($search = $request->query('search')) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        if ($sortBy = $request->query('sort_by')) {
+            $order = $request->query('order', 'asc');
+            $query->orderBy($sortBy, $order);
+        }
+
+        $limit = intval($request->query('limit', 10));
+
+        return response()->json($query->paginate($limit));
+    }
+
+
     public function store(Request $request)
     {
         $validated = $request->validate([

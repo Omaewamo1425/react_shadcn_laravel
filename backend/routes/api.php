@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::get('/roles', [RoleController::class, 'index']);
+    Route::get('/roles/read', [RoleController::class, 'read']);
     Route::post('/roles', [RoleController::class, 'store']);
     Route::put('/roles/{role}', [RoleController::class, 'update']);
     Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
@@ -34,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::get('/permissions', [PermissionController::class, 'index']);
+    Route::get('/permissions/read', [PermissionController::class, 'read']);
     Route::post('/permissions', [PermissionController::class, 'store']);
     Route::put('/permissions/{permission}', [PermissionController::class, 'update']);
     Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy']);

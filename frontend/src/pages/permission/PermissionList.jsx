@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ export default function PermissionList() {
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const fetchPermissions = async () => {
+  const fetchPermissions = useCallback(async () => {
     try {
       const res = await axios.get("http://localhost:8000/api/permissions", {
         headers: { Authorization: `Bearer ${token}` },
@@ -24,7 +24,7 @@ export default function PermissionList() {
     } catch {
       showToast("Failed to load permissions", "error");
     }
-  };
+  }, [token]);
 
   const openCreate = () => {
     setForm({ name: "" });
@@ -76,7 +76,7 @@ export default function PermissionList() {
 
   useEffect(() => {
     fetchPermissions();
-  }, []);
+  }, [fetchPermissions]);
 
   return (
     <Layout>

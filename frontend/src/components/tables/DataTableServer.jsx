@@ -1,4 +1,4 @@
-import { useEffect,  useState } from "react";
+import { useEffect,  useState, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -42,7 +42,7 @@ export default function DataTableServer({
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebounce(search, 500);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(fetchUrl, {
@@ -62,11 +62,14 @@ export default function DataTableServer({
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchUrl, token, pageIndex, pageSize, debouncedSearch]);
+
 
   useEffect(() => {
     fetchData();
-  }, [debouncedSearch, pageIndex, pageSize, refetchTrigger]);
+  }, [fetchData, refetchTrigger]);
+
+
 
   const table = useReactTable({
     data,

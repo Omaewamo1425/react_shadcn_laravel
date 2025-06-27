@@ -85,11 +85,11 @@ export default function RoleList() {
       id: "permissions",
       header: () => <div className="text-center">Permissions</div>,
       cell: ({ row }) => (
-        <div className="flex justify-center flex-wrap gap-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-1 justify-items-center">
           {row.original.permissions.map((p) => (
             <span
               key={p.id}
-              className="bg-green-100 text-green-800 text-[10px] font-medium px-2 py-0.5 rounded-full"
+              className="bg-green-100 text-green-800 text-[10px] font-medium px-2 py-0.5 rounded-full text-center"
             >
               {p.name}
             </span>

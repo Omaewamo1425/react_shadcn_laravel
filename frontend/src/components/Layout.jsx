@@ -9,8 +9,8 @@ import { Home, Users, ShieldCheck, Settings } from "lucide-react";
 const navLinks = [
   { to: "/dashboard", label: "Dashboard", icon: Home },
   { to: "/users", label: "Users", icon: Users, permission: "view-users" },
-  { to: "/permission", label: "Permission", icon: ShieldCheck },
-  { to: "/role", label: "Role", icon: Settings },
+  { to: "/permission", label: "Permission", icon: ShieldCheck, permission: "view-roles" },
+  { to: "/role", label: "Role", icon: Settings, permission: "view-roles" },
 ];
 
 export default function Layout({ children }) {

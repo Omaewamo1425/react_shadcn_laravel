@@ -14,7 +14,7 @@ export default function RoleList() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
-  const [refresh, setRefresh] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchPermissions = async () => {
     try {
@@ -55,7 +55,7 @@ export default function RoleList() {
       });
 
       showToast(`Role ${form.id ? "updated" : "created"} successfully`);
-      setRefresh((prev) => !prev);
+      setRefreshKey(prev => prev + 1);
       setModal(false);
     });
 
@@ -72,7 +72,7 @@ export default function RoleList() {
     });
 
     showToast("Role deleted successfully");
-    setRefresh((prev) => !prev);
+    setRefreshKey(prev => prev + 1);
   };
 
   const columns = [
@@ -118,27 +118,23 @@ export default function RoleList() {
   }, []);
 
   return (
-    <div className="p-4">
-      <div className="mb-4">
-        <h2 className="text-xl font-bold mb-2">Roles</h2>
-        <DataTableServer
-          token={token}
-          fetchUrl="http://localhost:8000/api/roles/read"
-          columnsDef={columns}
-          createButton={<Button onClick={openCreate}>+ Create Role</Button>}
-          refreshSignal={refresh}
+     <>
+      <DataTableServer
+            token={token}
+            fetchUrl="http://localhost:8000/api/roles/read"
+            columnsDef={columns}
+            createButton={<Button onClick={openCreate}>+ Create Role</Button>}
+            refetchTrigger={refreshKey}
+          />
+        <RoleFormModal
+          open={modal}
+          onClose={() => setModal(false)}
+          form={form}
+          setForm={setForm}
+          permissions={permissions}
+          onSubmit={saveRole}
+          saving={saving}
         />
-      </div>
-
-      <RoleFormModal
-        open={modal}
-        onClose={() => setModal(false)}
-        form={form}
-        setForm={setForm}
-        permissions={permissions}
-        onSubmit={saveRole}
-        saving={saving}
-      />
-    </div>
+     </>
   );
 }

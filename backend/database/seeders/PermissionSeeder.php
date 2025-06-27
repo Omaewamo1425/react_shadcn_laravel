@@ -18,13 +18,21 @@ class PermissionSeeder extends Seeder
             'create-users',
             'edit-users',
             'delete-users',
+            'view-users',
+            'create-permissions',
+            'edit-permissions',
+            'delete-permissions',
+            'view-permissions',
+            'create-roles',
+            'edit-roles',
+            'delete-roles',
+            'view-roles',
         ];
 
         foreach ($permissions as $perm) {
             Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
         }
 
-        // Create roles
         $admin_role = Role::firstOrCreate(['name' => 'super admin', 'guard_name' => 'web']);
 
         $admin_role->syncPermissions($permissions);

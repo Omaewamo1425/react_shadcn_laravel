@@ -13,6 +13,7 @@ export default function PermissionList() {
   const [form, setForm] = useState({});
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchPermissions = useCallback(async () => {
     try {
@@ -50,6 +51,7 @@ export default function PermissionList() {
         });
         showToast(`Permission ${form.id ? "updated" : "created"} successfully`);
         fetchPermissions();
+        setRefreshKey(prev => prev + 1);
         setModal(false);
       }
     );
@@ -66,6 +68,7 @@ export default function PermissionList() {
           headers: { Authorization: `Bearer ${token}` },
         });
         showToast("Permission deleted");
+        setRefreshKey(prev => prev + 1);
         fetchPermissions();
       }
     );
@@ -116,26 +119,23 @@ export default function PermissionList() {
   }, [fetchPermissions]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Permissions</h1>
-        <Button onClick={openCreate}>Create Permission</Button>
-      </div>
-
+    <>
       <DataTableServer
-        token={token}
-        fetchUrl="http://localhost:8000/api/permissions/read"
-        columnsDef={columns}
-      />
+          token={token}
+          fetchUrl="http://localhost:8000/api/permissions/read"
+          createButton={<Button onClick={openCreate}>Create Permission</Button>}
+          columnsDef={columns}
+          refetchTrigger={refreshKey}
+        />
 
-      <PermissionFormModal
-        open={modal}
-        onClose={() => setModal(false)}
-        form={form}
-        setForm={setForm}
-        onSubmit={savePermission}
-        saving={saving}
-      />
-    </div>
+        <PermissionFormModal
+          open={modal}
+          onClose={() => setModal(false)}
+          form={form}
+          setForm={setForm}
+          onSubmit={savePermission}
+          saving={saving}
+        />
+    </>
   );
 }

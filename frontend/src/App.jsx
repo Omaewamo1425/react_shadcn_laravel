@@ -73,7 +73,7 @@ export default function App() {
         <Route
           path="/permission"
           element={
-            <ProtectedRoute >
+            <ProtectedRoute permission="view-permissions">
               <Permission />
             </ProtectedRoute>
           }
@@ -82,7 +82,7 @@ export default function App() {
         <Route
           path="/role"
           element={
-            <ProtectedRoute >
+            <ProtectedRoute permission="view-roles">
               <Role />
             </ProtectedRoute>
           }

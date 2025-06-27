@@ -11,10 +11,12 @@ import UserFormModal from "@/components/UserFormModal";
 export default function UserList() {
   const token = useSelector((state) => state.auth.token);
   const permissions = useSelector((state) => state.auth.permissions);
+
   const [roles, setRoles] = useState([]);
   const [form, setForm] = useState({});
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchRoles = async () => {
     try {
@@ -41,19 +43,22 @@ export default function UserList() {
 
   const saveUser = async () => {
     const label = form.id ? "Update" : "Create";
+
     const confirmed = await confirmAction(`Are you sure to ${label.toLowerCase()} this user?`, async () => {
       setSaving(true);
+
       const url = form.id
         ? `http://localhost:8000/api/users/${form.id}`
         : `http://localhost:8000/api/users`;
-
       const method = form.id ? axios.put : axios.post;
+
       const response = await method(url, form, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       showToast(response.data.message);
       setModal(false);
+      setRefreshKey(prev => prev + 1);
     });
 
     if (!confirmed) setModal(true);
@@ -61,11 +66,12 @@ export default function UserList() {
   };
 
   const deleteUser = async (id) => {
-    await confirmAction(`Are you sure to delete this user?`, async () => {
+    await confirmAction("Are you sure to delete this user?", async () => {
       const response = await axios.delete(`http://localhost:8000/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       showToast(response.data.message);
+      setRefreshKey(prev => prev + 1);
     });
   };
 
@@ -91,12 +97,22 @@ export default function UserList() {
       cell: ({ row }) => (
         <div className="flex justify-center gap-1 px-1 py-0.5">
           {hasPermission(permissions, "edit-users") && (
-            <Button size="sm" className="h-6 px-2 text-[10px]" variant="outline" onClick={() => openEdit(row.original)}>
+            <Button
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              variant="outline"
+              onClick={() => openEdit(row.original)}
+            >
               Edit
             </Button>
           )}
           {hasPermission(permissions, "delete-users") && (
-            <Button size="sm" className="h-6 px-2 text-[10px]" variant="destructive" onClick={() => deleteUser(row.original.id)}>
+            <Button
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              variant="destructive"
+              onClick={() => deleteUser(row.original.id)}
+            >
               Delete
             </Button>
           )}
@@ -112,6 +128,7 @@ export default function UserList() {
         permissions={permissions}
         fetchUrl="http://localhost:8000/api/users"
         columnsDef={columns}
+        refetchTrigger={refreshKey}
         createButton={
           hasPermission(permissions, "create-users") && (
             <Button onClick={openCreate}>+ Create User</Button>

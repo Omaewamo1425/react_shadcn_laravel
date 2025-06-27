@@ -32,6 +32,7 @@ export default function DataTableServer({
   fetchUrl,
   columnsDef,
   createButton,
+  refetchTrigger,
 }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -65,7 +66,7 @@ export default function DataTableServer({
 
   useEffect(() => {
     fetchData();
-  }, [debouncedSearch, pageIndex, pageSize]);
+  }, [debouncedSearch, pageIndex, pageSize, refetchTrigger]);
 
   const table = useReactTable({
     data,

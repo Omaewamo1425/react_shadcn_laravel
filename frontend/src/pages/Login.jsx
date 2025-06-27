@@ -31,13 +31,15 @@ export default function Login() {
       dispatch(setToken(token));
 
       // Wait for Redux to store user and permissions
-      await dispatch(setUser(user)); // Make sure this matches your reducer's expectation
+       dispatch(setUser(user)); // Make sure this matches your reducer's expectation
 
       // Navigate after state is updated
       navigate("/dashboard");
     } catch (err) {
-      console.error("Login failed", err);
-    } finally {
+  console.error("Login failed", err);
+  alert(err?.response?.data?.message || "Something went wrong");
+}
+ {
       setLoading(false);
     }
   };

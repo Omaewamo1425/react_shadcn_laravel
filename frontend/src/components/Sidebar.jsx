@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Rocket } from "lucide-react";
+import { Atom, Rocket } from "lucide-react";
 
 export default function Sidebar({ sidebarOpen, sidebarCollapsed, visibleLinks, toggleSidebar }) {
   const location = useLocation();
@@ -15,7 +15,10 @@ export default function Sidebar({ sidebarOpen, sidebarCollapsed, visibleLinks, t
           {sidebarCollapsed ? (
             <Rocket className="text-[#e15b05] h-6 w-6" />
           ) : (
-            <h2 className="text-xl font-extrabold text-[#e15b05] tracking-wide">🚀 MyApp</h2>
+            <>
+            <Atom className="w-5 h-5" />
+            <h2 className="text-xl font-extrabold text-[#e15b05] tracking-wide">Template</h2>
+            </>
           )}
         </div>
         <nav className="flex flex-col gap-1 p-3">
